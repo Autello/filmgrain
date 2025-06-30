@@ -1,24 +1,36 @@
-const canvas = document.getElementById('grainCanvas');
-const ctx = canvas.getContext('2d');
-let grainAmount = parseFloat(document.getElementById('grainAmount').value);
-let grainScale = parseFloat(document.getElementById('grainScale').value);
+const imageCanvas = document.getElementById('imageCanvas');
+const grainCanvas = document.getElementById('grainCanvas');
+const imageCtx = imageCanvas.getContext('2d');
+const grainCtx = grainCanvas.getContext('2d');
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+const grainAmountSlider = document.getElementById('grainAmount');
+const grainScaleSlider = document.getElementById('grainScale');
+
+let grainAmount = parseFloat(grainAmountSlider.value);
+let grainScale = parseFloat(grainScaleSlider.value);
+
+let image = new Image();
+
+function resizeCanvasToImage(img) {
+  imageCanvas.width = img.width;
+  imageCanvas.height = img.height;
+  grainCanvas.width = img.width;
+  grainCanvas.height = img.height;
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
 
-// Generate realistic film grain
+function drawImage(img) {
+  resizeCanvasToImage(img);
+  imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+  imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+}
+
 function drawFilmGrain() {
-  const width = canvas.width;
-  const height = canvas.height;
-  const imageData = ctx.createImageData(width, height);
+  const width = grainCanvas.width;
+  const height = grainCanvas.height;
+  const imageData = grainCtx.createImageData(width, height);
   const data = imageData.data;
 
   for (let i = 0; i < data.length; i += 4) {
-    // Organic grain with Perlin-like randomness
     const base = (Math.random() + Math.random() + Math.random() + Math.random()) / 4;
     const value = 128 + (base - 0.5) * 255 * grainAmount;
 
@@ -32,19 +44,30 @@ function drawFilmGrain() {
     data[i + 3] = 255;
   }
 
-  ctx.putImageData(imageData, 0, 0);
+  grainCtx.putImageData(imageData, 0, 0);
 }
 
 function animateGrain() {
-  drawFilmGrain();
+  if (image.src) drawFilmGrain();
   requestAnimationFrame(animateGrain);
 }
 animateGrain();
 
-// Controls
-document.getElementById('grainAmount').addEventListener('input', e => {
-  grainAmount = parseFloat(e.target.value);
+document.getElementById('imageUpload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    image.onload = () => drawImage(image);
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
 });
-document.getElementById('grainScale').addEventListener('input', e => {
-  grainScale = parseFloat(e.target.value);
+
+grainAmountSlider.addEventListener('input', () => {
+  grainAmount = parseFloat(grainAmountSlider.value);
+});
+grainScaleSlider.addEventListener('input', () => {
+  grainScale = parseFloat(grainScaleSlider.value);
 });
