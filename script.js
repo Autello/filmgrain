@@ -33,7 +33,7 @@ function drawImageWithGrain() {
 }
 
 function applyFilmGrain() {
-  const grainAmount = parseInt(grainAmountSlider.value, 10) / 100;
+  const grainAmount = parseInt(grainAmountSlider.value, 10); // now 0–300
   const grainScale = parseInt(grainScaleSlider.value, 10);
 
   const gCanvas = document.createElement('canvas');
@@ -46,15 +46,29 @@ function applyFilmGrain() {
 
   const imageData = gctx.createImageData(scaledWidth, scaledHeight);
   for (let i = 0; i < imageData.data.length; i += 4) {
-    const grain = (Math.random() - 0.5) * 255 * grainAmount;
+    const grain = (Math.random() - 0.5) * grainAmount;
 
-    imageData.data[i]     = 128 + grain * 0.9;
-    imageData.data[i + 1] = 128 + grain;
-    imageData.data[i + 2] = 128 + grain * 1.1;
-    imageData.data[i + 3] = 30 + Math.random() * 30;
+    // Clamp to 0–255 to avoid overflow
+    const r = Math.min(255, Math.max(0, 128 + grain * 0.9));
+    const g = Math.min(255, Math.max(0, 128 + grain));
+    const b = Math.min(255, Math.max(0, 128 + grain * 1.1));
+    const a = Math.min(255, Math.max(0, 40 + Math.random() * 50));
+
+    imageData.data[i]     = r;
+    imageData.data[i + 1] = g;
+    imageData.data[i + 2] = b;
+    imageData.data[i + 3] = a;
   }
 
   gctx.putImageData(imageData, 0, 0);
+
+  ctx.globalAlpha = 1.0;
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(gCanvas, 0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
 
   // Scale up the grain canvas and overlay
   ctx.globalAlpha = 1.0;
